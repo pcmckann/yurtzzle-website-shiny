@@ -1,18 +1,23 @@
 library(shiny)
 library(magick)
 
-lf=list.files()
+# 
+# addResourcePath(prefix = "Swatches", directoryPath = "images/Swatches")
+# addResourcePath(prefix = "Roof", directoryPath="images/Roof")
+# addResourcePath(prefix = "Walls", directoryPath="images/Walls")
+# addResourcePath(prefix = "Skirt", directoryPath="images/Skirt")
+# addResourcePath(prefix = "Background", directoryPath="images/Background")
 
 weblonpics=list.files(path='./www/Swatches',pattern='Weblon')
 weblonnames=gsub('.png','',weblonpics)
 weblonnamesshort=gsub('Weblon Coast Line Plus ','',weblonnames)
-sunbrellapics=list.files(path='www/Swatches',pattern='Sunbrella')
+sunbrellapics=list.files(path='./Swatches',pattern='Sunbrella')
 sunbrellanames=gsub('.png','',sunbrellapics)
 sunbrellanamesshort=gsub('Sunbrella Seamark ','',weblonnames)
-swatchfiles=list.files('./www/swatches')
-rooffiles=list.files('./www/roof')
-wallfiles=list.files('./www/walls')
-skirtfiles=list.files('./www/skirt')
+swatchfiles=list.files('./www/Swatches')
+rooffiles=list.files(path='./www/Roof')
+wallfiles=list.files(path='./www/Walls')
+skirtfiles=list.files(path='./www/Skirt')
 
 
 ui <- fluidPage(
@@ -107,10 +112,14 @@ server <- function(input, output) {
   
   options(shiny.maxRequestSize=30*1024^2)#allows large files to be uploaded (30MB)
   # 
-   roofswatchfile=reactive({
-          normalizePath(file.path('./www/Swatches',swatchfiles[grepl(input$roof,swatchfiles)]))
+  # roofswatchfile=reactiveVal(
+  #       normalizePath(file.path('./Swatches/Weblon Coast Line Plus Almond.png'))
+  # )
+        
+  roofswatchfile=reactive({
+     normalizePath(file.path('./www/Swatches',swatchfiles[grepl(input$roof,swatchfiles)]))
    })
-
+  observe(roofswatchfile())
   wallswatchfile=reactive({
      normalizePath(file.path('./www/Swatches',swatchfiles[grepl(input$walls,swatchfiles)]))
    })
@@ -118,8 +127,15 @@ server <- function(input, output) {
      normalizePath(file.path('./www/Swatches',swatchfiles[grepl(input$skirt,swatchfiles)]))
    })
 
+   # roofswatchfile=bindEvent( 
+   #   normalizePath(file.path(
+   #     paste0('./Swatches/',swatchfiles[grepl(input$roof,swatchfiles)])
+   #   )
+   #   )        
+   # )
 	output$roof=renderImage({
-	  list(src=roofswatchfile(),height=100,width=100)
+	  list(src=roofswatchfile()
+	  ,height=100,width=100)
 	},deleteFile=FALSE)
 	output$walls=renderImage({
     list(src=wallswatchfile(),height=100,width=100)
@@ -146,10 +162,7 @@ server <- function(input, output) {
 	
 
 	updatedbgLoc <- reactive({
-	  ## retrieve the imageVal
-	  #image <- imageVal()
-	  
-	  
+
 	  # Numeric operators
 	  bgfileloc <- image_write(bgVal(), format = 'jpg')
 	  
@@ -157,23 +170,14 @@ server <- function(input, output) {
 	  bgfileloc
 	})
 	
-	# # A plot of fixed size
-	# output$img <- renderImage(
-	#   {
-	#     # Return a list
-	#     list(src = updatedImageLoc(), contentType = "image/jpeg")
-	#   }, 
-	#   ## DO NOT DELETE THE FILE!
-	#   deleteFile = FALSE
-	# )
-	  
+
 	
   tempfilelocation=reactive({
     
-	  bgfn=updatedbgLoc()#normalizePath(file.path("./www/background/Republic.jpg"))
-	  rfn=normalizePath(file.path('./www/roof',rooffiles[grepl(input$roof,rooffiles)]))
-	  wfn=normalizePath(file.path('./www/walls',wallfiles[grepl(input$walls,wallfiles)]))
-	  sfn=normalizePath(file.path('./www/skirt',skirtfiles[grepl(input$skirt,skirtfiles)]))
+	  bgfn=updatedbgLoc()#normalizePath(file.path("./background/Republic.jpg"))
+	  rfn=normalizePath(file.path('./www/Roof',rooffiles[grepl(input$roof,rooffiles)]))
+	  wfn=normalizePath(file.path('./www/Walls',wallfiles[grepl(input$walls,wallfiles)]))
+	  sfn=normalizePath(file.path('./www/Skirt',skirtfiles[grepl(input$skirt,skirtfiles)]))
 	  bg=image_border(image_read(path=bgfn),"black","10x10")|>image_scale("800") #|> image_resize('1000%')
 	
 	  #now to superimpose different roof, walls, and skirt
@@ -181,7 +185,7 @@ server <- function(input, output) {
 	  w=image_read(path=wfn)|>image_scale("800") #|>image_transparent('grey', fuzz = 25)
 	  #doorcolor='orange';doorx="+555+400";w2=image_fill(w,doorcolor,point=doorx,fuzz=20)
 	  s=image_read(path=sfn)|>image_scale("800") #|>image_transparent('grey', fuzz = 25)
-	  #y=image_read(path=file.path("./www/door/door Yurtzzle Logo Window.png"))|>image_scale("500")
+	  #y=image_read(path=file.path("./door/door Yurtzzle Logo Window.png"))|>image_scale("500")
 	  # 
 	# 
 	   dy=image_trim(image_flatten(c(image_background(s,"none"),w,r)))|>image_scale(input$yurtsize)
